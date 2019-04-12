@@ -182,10 +182,10 @@ function loadPSG(psg){
 	window.audioContext=new AudioContext();
 	var bufferSize = 4096;
 	
-	window.sound = audioContext.createScriptProcessor(bufferSize, 1, 1);
+	window.sound = audioContext.createScriptProcessor(bufferSize, 2, 2);
 	sound.onaudioprocess = function(e) {
 		var left = e.outputBuffer.getChannelData(0);
-		var right = e.outputBuffer.getChannelData(0);
+		var right = e.outputBuffer.getChannelData(1);
 		for (var i = 0; i < bufferSize; i++) {
 			var x=ay.cycle(5);
 			if(!x)
