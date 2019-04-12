@@ -1,4 +1,4 @@
 # Javascript AY-3-8910 Emulator
 
-Unfinished
+Unfinished.  
 Currently only supports `.psg` files.
