@@ -182,16 +182,21 @@ function loadPSG(psg){
 	window.audioContext=new AudioContext();
 	var bufferSize = 4096;
 	
+	var cyclesPerSample = ay.clock/audioContext.sampleRate;
+	
 	window.sound = audioContext.createScriptProcessor(bufferSize, 2, 2);
+	var tickError=0;
 	sound.onaudioprocess = function(e) {
 		var left = e.outputBuffer.getChannelData(0);
 		var right = e.outputBuffer.getChannelData(1);
 		for (var i = 0; i < bufferSize; i++) {
-			var x=ay.cycle(5);
+			var cycles=cyclesPerSample+tickError|0;
+			var x=ay.cycle(cycles);
+			tickError+= cyclesPerSample-cycles;
 			if(!x)
 				sound.disconnect();
-			left[i] = (x[0]+x[1]*.6+x[2]*.4)/2/65535;
-			right[i] = (x[0]*.4+x[1]*.6+x[2])/2/65535;
+			left[i]  = (x[0]   +x[1]*.6+x[2]*.4)/2/65535;
+			right[i] = (x[0]*.4+x[1]*.6+x[2]   )/2/65535;
 		}
 	}
 	sound.connect(audioContext.destination);
