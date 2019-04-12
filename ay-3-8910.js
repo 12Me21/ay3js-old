@@ -65,8 +65,7 @@ EnvelopeOscillator.patterns=(function(){
 	return patterns;
 })();
 EnvelopeOscillator.prototype.nextState=function(){
-	++this.state;
-	if(this.state>=128)
+	if(++this.state>=128)
 		this.state-=64;
 }
 EnvelopeOscillator.prototype.volume=function(){
@@ -109,7 +108,9 @@ AY.prototype.cycle=function(steps){
 		this.oscillator.envelope.step();
 		if(this.onInterrupt)
 			if(++this.counter>this.clock/50){
-				this.onInterrupt(this);
+				var result=this.onInterrupt(this);
+				if(!result)
+					return false;
 				this.counter=0;
 			}
 		
@@ -187,6 +188,8 @@ function loadPSG(psg){
 		var right = e.outputBuffer.getChannelData(0);
 		for (var i = 0; i < bufferSize; i++) {
 			var x=ay.cycle(5);
+			if(!x)
+				sound.disconnect();
 			left[i] = (x[0]+x[1]*.6+x[2]*.4)/2/65535;
 			right[i] = (x[0]*.4+x[1]*.6+x[2])/2/65535;
 		}
@@ -205,17 +208,19 @@ function eated_file_go(){
 function interrupt(ay){
 	
 	while(1){
+		if(psgIndex>=psgFile.length)
+			return false;
 		var reg=psgFile[psgIndex++];
 		if(reg<=0xF){
 			ay.setRegister(reg,psgFile[psgIndex++]);
 		}else if(reg==0xFD){
-			//end playback
+			return false;
 		}else if(reg==0xFE){
 			//???
 		}else if(reg==0xFF){
-			break;
+			return true;
 		}else{
-			//invalid
+			return false;
 		}
 	}
 }
