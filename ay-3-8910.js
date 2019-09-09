@@ -1,4 +1,4 @@
-delete console; //console.log is too unsafe
+//delete console; //console.log is too unsafe
 
 Oscillator=function(){
 	this.period=0;
@@ -180,7 +180,7 @@ function loadPSG(psg){
 	// ay.setRegister(10,15)
 	
 	window.audioContext=new AudioContext();
-	var bufferSize = 4096;
+	var bufferSize = 4096/2;
 	
 	var cyclesPerSample = ay.clock/audioContext.sampleRate;
 	
@@ -210,7 +210,58 @@ function eated_file_go(){
 	reader.readAsArrayBuffer(this.files[0]);
 }
 
+function map(v,start2,end2){
+	return v*(end2-start2)+start2;
+}
+
+function drawWave(ay,index,canvas){
+	var height=canvas.height/3;
+	var width=canvas.width;
+	var y=height*index;
+	var ctx=canvas.getContext("2d");
+	ctx.strokeStyle="limegreen";
+	ctx.lineWidth=3;
+	ctx.beginPath();
+	var tone_period=ay.oscillator[index].period;
+	var c=(width/2*4 /* -tone_period/2 */ );
+	
+	var tone_state=!(c / tone_period & 1);
+	var tone_count=tone_period - (c % tone_period);
+	
+	
+	var noise_period=ay.oscillator.noise.period;
+	var noise_state=0;
+	var noise_count=0;
+	var channel=ay.channel[index];
+	var v=AY.volumes[channel.volume]/65535;
+	for(var x=0;x<width;x++){
+		ctx.lineTo(x,y+height/2+map(((tone_state&&channel.tone||noise_state&&channel.noise)),height*-.4,height*.4)*v);
+		tone_count+=4;
+		if (tone_count>=tone_period){
+			tone_state=!tone_state;
+			tone_count-=tone_period;
+		}
+		noise_count+=4;
+		if (noise_count>=noise_period){
+			noise_state=Math.random()<0.5;
+			noise_count-=noise_period;
+		}
+	}
+	ctx.stroke();
+}
+var ic=0;
 function interrupt(ay){
+	var ctx=$canvas.getContext("2d");
+	ctx.fillStyle="rgba(0,0,0,01)";
+	ctx.fillRect(0,0,$canvas.width,$canvas.height);
+	
+	for(var i=0;i<3;i++){
+		drawWave(ay,i,$canvas);
+	}
+	if(ic>0){
+		ic--;
+		return true;
+	}
 	
 	while(1){
 		if(psgIndex>=psgFile.length)
@@ -221,6 +272,8 @@ function interrupt(ay){
 		}else if(reg==0xFD){
 			return false;
 		}else if(reg==0xFE){
+			ic=psgFile[psgIndex++]*4-1;
+			return true;
 			//???
 		}else if(reg==0xFF){
 			return true;
